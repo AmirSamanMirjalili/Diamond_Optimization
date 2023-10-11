@@ -45,11 +45,6 @@ d[0] = sf.cos(phi)*sf.sin(gamma)
 d[1] = sf.sin(phi)*sf.sin(gamma)
 d[2] = sf.cos(gamma)
 
-z = sf.V3.symbolic("")
-z[0] = 0
-z[1] = 0
-z[2] = 0
-
 # create delta rotation matrix for kinematic in two pose 1(i) and 2(j)
 RotationKin = sf.Matrix([np.cross(np.cross(c, d), c) / sf.sin(beta),np.cross(c, d) / sf.sin(beta),c])
 RotationKin = sf.Rot3.from_rotation_matrix(RotationKin)
@@ -74,49 +69,51 @@ Error_Model_in_tangent[2] = Error_Model_in_tangent_list[2]
 
 def error_model_func(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
-                     RotGT1_x: sf.Symbol('RotGT1_x'), RotGT1_y: sf.Symbol('RotGT1_y'), RotGT1_z: sf.Symbol('RotGT1_z'), RotGT1_w: sf.Symbol('RotGT1_w'),
-                     RotGT2_x: sf.Symbol('RotGT2_x'), RotGT2_y: sf.Symbol('RotGT2_y'), RotGT2_z: sf.Symbol('RotGT2_z'), RotGT2_w: sf.Symbol('RotGT1_w'),
-                     RotHandEye_x: sf.Symbol('RotHandEye_x'), RotHandEye_y: sf.Symbol('RotHandEye_y'), RotHandEye_z: sf.Symbol('RotHandEye_z'), RotHandEye_w: sf.Symbol('RotHandEye_w'),
+                     RotGT1: sf.Rot3.symbolic("RotGT1"),
+                     RotGT2: sf.Rot3.symbolic("RotGT2"),
+                     RotHandEye: sf.Rot3.symbolic("RotHandEye"),
                      epsilon: sf.Scalar = 0
                     ) -> sf.Vector3:
     model = Error_Model_in_tangent
     return sf.V3(model)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/DiamondFactorGraph")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
 
 
 def error_model_func_wrt_alpha(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
-                     RotGT1_x: sf.Symbol('RotGT1_x'), RotGT1_y: sf.Symbol('RotGT1_y'), RotGT1_z: sf.Symbol('RotGT1_z'), RotGT1_w: sf.Symbol('RotGT1_w'),
-                     RotGT2_x: sf.Symbol('RotGT2_x'), RotGT2_y: sf.Symbol('RotGT2_y'), RotGT2_z: sf.Symbol('RotGT2_z'), RotGT2_w: sf.Symbol('RotGT1_w'),
-                     RotHandEye_x: sf.Symbol('RotHandEye_x'), RotHandEye_y: sf.Symbol('RotHandEye_y'), RotHandEye_z: sf.Symbol('RotHandEye_z'), RotHandEye_w: sf.Symbol('RotHandEye_w'),
+                     RotGT1: sf.Rot3.symbolic("RotGT1"),
+                     RotGT2: sf.Rot3.symbolic("RotGT2"),
+                     RotHandEye: sf.Rot3.symbolic("RotHandEye"),
                      epsilon: sf.Scalar = 0
                     ) -> sf.Vector3:
     model_wrt_alpha = Error_Model_in_tangent.diff(alpha)
     return sf.V3(model_wrt_alpha)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_alpha, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/DiamondFactorGraph")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
+
 
 def error_model_func_wrt_beta(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
-                     RotGT1_x: sf.Symbol('RotGT1_x'), RotGT1_y: sf.Symbol('RotGT1_y'), RotGT1_z: sf.Symbol('RotGT1_z'), RotGT1_w: sf.Symbol('RotGT1_w'),
-                     RotGT2_x: sf.Symbol('RotGT2_x'), RotGT2_y: sf.Symbol('RotGT2_y'), RotGT2_z: sf.Symbol('RotGT2_z'), RotGT2_w: sf.Symbol('RotGT1_w'),
-                     RotHandEye_x: sf.Symbol('RotHandEye_x'), RotHandEye_y: sf.Symbol('RotHandEye_y'), RotHandEye_z: sf.Symbol('RotHandEye_z'), RotHandEye_w: sf.Symbol('RotHandEye_w'),
+                     RotGT1: sf.Rot3.symbolic("RotGT1"),
+                     RotGT2: sf.Rot3.symbolic("RotGT2"),
+                     RotHandEye: sf.Rot3.symbolic("RotHandEye"),
                      epsilon: sf.Scalar = 0
                     ) -> sf.Vector3:
     model_wrt_beta = Error_Model_in_tangent.diff(beta)
     return sf.V3(model_wrt_beta)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_beta, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/DiamondFactorGraph")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
+
 
 def error_model_func_wrt_hand_eye(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
-                     RotGT1_x: sf.Symbol('RotGT1_x'), RotGT1_y: sf.Symbol('RotGT1_y'), RotGT1_z: sf.Symbol('RotGT1_z'), RotGT1_w: sf.Symbol('RotGT1_w'),
-                     RotGT2_x: sf.Symbol('RotGT2_x'), RotGT2_y: sf.Symbol('RotGT2_y'), RotGT2_z: sf.Symbol('RotGT2_z'), RotGT2_w: sf.Symbol('RotGT1_w'),
-                     RotHandEye_x: sf.Symbol('RotHandEye_x'), RotHandEye_y: sf.Symbol('RotHandEye_y'), RotHandEye_z: sf.Symbol('RotHandEye_z'), RotHandEye_w: sf.Symbol('RotHandEye_w'),
+                     RotGT1: sf.Rot3.symbolic("RotGT1"),
+                     RotGT2: sf.Rot3.symbolic("RotGT2"),
+                     RotHandEye: sf.Rot3.symbolic("RotHandEye"),
                      epsilon: sf.Scalar = 0
                     ) -> sf.Vector3:
     model_wrt_hand_eye = Error_Model_in_tangent.jacobian(RotHandEye)
     return sf.Matrix33(model_wrt_hand_eye)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_hand_eye, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/DiamondFactorGraph")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
