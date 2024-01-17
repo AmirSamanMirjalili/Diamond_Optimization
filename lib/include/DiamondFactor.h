@@ -11,7 +11,7 @@
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/inference/Symbol.h>
 #include <gtsam/base/Matrix.h>
-
+#include <gtsam/geometry/Rot3.h>
 #include "model.h"
 
 using namespace gtsam;
@@ -23,7 +23,7 @@ sym::Rot3<double> SymforceFromGtsam(const gtsam::Rot3& gtsam_rot3) {
 
 namespace gtsam
 {   // this factor says: second should be larger than the first
-    class DiamondCalibrationFactor : public NoiseModelFactor3<double, double, gtsam::Rot3>
+    class DiamondCalibrationFactor : public NoiseModelFactor3<double, double, double, double, gtsam::Rot3>
     {   
         private:
         double theta11;
@@ -35,59 +35,82 @@ namespace gtsam
 
         public:
         // Constructor
-        DiamondCalibrationFactor(Key key1, Key key2, Key key3, 
+        DiamondCalibrationFactor(Key key1, Key key2, Key key3, Key key4, Key key5, 
                                  double theta11_, double theta12_, double theta21_, double theta22_,
                                  gtsam::Rot3 RotGT1_, 
                                  gtsam::Rot3 RotGT2_, 
                                  const SharedNoiseModel &model) 
-        : NoiseModelFactor3<double, double, gtsam::Rot3>(model, key1, key2, key3), theta11(theta11_), theta12(theta12_), theta21(theta21_), theta22(theta22_), RotGT1(RotGT1_), RotGT2(RotGT2_){}
+        : NoiseModelFactor3<double, double, double, double, gtsam::Rot3>(model, key1, key2, key3, key4, key5), theta11(theta11_), theta12(theta12_), theta21(theta21_), theta22(theta22_), RotGT1(RotGT1_), RotGT2(RotGT2_){}
 
         // Evaluate the error
-        Vector evaluateError(const double &alpha, const double &beta, const gtsam::Rot3 &RotHandEye,
+        Vector evaluateError(const double &offset0, const double &offset1, const double &alpha, const double &beta, const gtsam::Rot3 &RotHandEye,
                              OptionalMatrixType H1,
                              OptionalMatrixType H2,
-                             OptionalMatrixType H3) const override
+                             OptionalMatrixType H3,
+                             OptionalMatrixType H4,
+                             OptionalMatrixType H5) const override
         {   
             Eigen::Matrix<double, 3, 1> model_func = sym::ErrorModelFunc(theta11, theta12, theta21, theta22,
-                                                                         alpha, beta,
+                                                                         offset0, offset1, alpha, beta,
                                                                          SymforceFromGtsam(RotGT1), 
                                                                          SymforceFromGtsam(RotGT2), 
                                                                          SymforceFromGtsam(RotHandEye),
                                                                          sym::kDefaultEpsilon<double>);
-
             if (H1)
             {
-                Eigen::Matrix<double, 3, 1> func_wrt_alpha = sym::ErrorModelFuncWrtAlpha(theta11, theta12, theta21, theta22,
-                                                                                         alpha, beta,
+                Eigen::Matrix<double, 3, 1> func_wrt_offset0 = sym::ErrorModelFuncWrtOffset1(theta11, theta12, theta21, theta22,
+                                                                                         offset0, offset1, alpha, beta,
                                                                                          SymforceFromGtsam(RotGT1), 
                                                                                          SymforceFromGtsam(RotGT2), 
                                                                                          SymforceFromGtsam(RotHandEye),
                                                                                          sym::kDefaultEpsilon<double>);
-                *H1 = (Matrix(3, 1) << func_wrt_alpha).finished();
+                *H1 = (Matrix(3, 1) << func_wrt_offset0).finished();
             }
 
             if (H2)
             {
-                Eigen::Matrix<double, 3, 1> func_wrt_beta = sym::ErrorModelFuncWrtBeta(theta11, theta12, theta21, theta22,
-                                                                                       alpha, beta,
+                Eigen::Matrix<double, 3, 1> func_wrt_offset1 = sym::ErrorModelFuncWrtOffset2(theta11, theta12, theta21, theta22,
+                                                                                       offset0, offset1, alpha, beta,
                                                                                        SymforceFromGtsam(RotGT1), 
                                                                                        SymforceFromGtsam(RotGT2), 
                                                                                        SymforceFromGtsam(RotHandEye),
                                                                                        sym::kDefaultEpsilon<double>);
-                *H2 = (Matrix(3, 1) << func_wrt_beta).finished();
+                *H2 = (Matrix(3, 1) << func_wrt_offset1).finished();
             }
 
             if (H3)
             {
+                Eigen::Matrix<double, 3, 1> func_wrt_alpha = sym::ErrorModelFuncWrtAlpha(theta11, theta12, theta21, theta22,
+                                                                                         offset0, offset1, alpha, beta,
+                                                                                         SymforceFromGtsam(RotGT1), 
+                                                                                         SymforceFromGtsam(RotGT2), 
+                                                                                         SymforceFromGtsam(RotHandEye),
+                                                                                         sym::kDefaultEpsilon<double>);
+                *H3 = (Matrix(3, 1) << func_wrt_alpha).finished();
+            }
+
+            if (H4)
+            {
+                Eigen::Matrix<double, 3, 1> func_wrt_beta = sym::ErrorModelFuncWrtBeta(theta11, theta12, theta21, theta22,
+                                                                                       offset0, offset1, alpha, beta,
+                                                                                       SymforceFromGtsam(RotGT1), 
+                                                                                       SymforceFromGtsam(RotGT2), 
+                                                                                       SymforceFromGtsam(RotHandEye),
+                                                                                       sym::kDefaultEpsilon<double>);
+                *H4 = (Matrix(3, 1) << func_wrt_beta).finished();
+            }
+
+            if (H5)
+            {
                 Eigen::Matrix<double, 3, 3> func_wrt_hand_eye = sym::ErrorModelFuncWrtHandEye(theta11, theta12, theta21, theta22,
-                                                                                              alpha, beta,
+                                                                                              offset0, offset1, alpha, beta,
                                                                                               SymforceFromGtsam(RotGT1), 
                                                                                               SymforceFromGtsam(RotGT2), 
                                                                                               SymforceFromGtsam(RotHandEye),
                                                                                               sym::kDefaultEpsilon<double>);
-                *H3 = (Matrix(3, 3) << func_wrt_hand_eye).finished();            
+                *H5 = (Matrix(3, 3) << func_wrt_hand_eye).finished();            
             }
-            // std::cout << "\nError is: " << model_func;
+
             return (Vector(3) << model_func).finished();
         }
     };

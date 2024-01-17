@@ -1,6 +1,7 @@
 # Setup
 import numpy as np
 import symforce
+import os
 
 symforce.set_symbolic_api("symengine")
 symforce.set_log_level("warning")
@@ -16,7 +17,9 @@ import symforce.symbolic as sf
 from symforce.values import Values
 from symforce.notebook_util import display, display_code, display_code_file
 
-theta1, theta2, theta11, theta12, theta21, theta22, alpha, beta = sf.symbols("theta1 theta2 theta11 theta12 theta21 theta22 alpha beta")
+out_put_save_directory = os.getcwd()
+
+theta1, theta2, theta11, theta12, theta21, theta22, alpha, beta, offset1, offset2 = sf.symbols("theta1 theta2 theta11 theta12 theta21 theta22 alpha beta offset1 offset2")
 
 # inverse kinematic
 phi = (theta1 + theta2) / 2
@@ -48,8 +51,8 @@ d[2] = sf.cos(gamma)
 # create delta rotation matrix for kinematic in two pose 1(i) and 2(j)
 RotationKin = sf.Matrix([np.cross(np.cross(c, d), c) / sf.sin(beta),np.cross(c, d) / sf.sin(beta),c])
 RotationKin = sf.Rot3.from_rotation_matrix(RotationKin)
-RotationKin1 = RotationKin.subs((theta1, theta2), (theta11, theta12))
-RotationKin2 = RotationKin.subs((theta1, theta2), (theta21, theta22))
+RotationKin1 = RotationKin.subs((theta1, theta2), (theta11+offset1, theta12+offset2))
+RotationKin2 = RotationKin.subs((theta1, theta2), (theta21+offset1, theta22+offset2))
 DeltaRotKin = RotationKin1.inverse() * RotationKin2
 
 # create delta rotation matrix for ground truth in two pose 1(i) and 2(j)
@@ -68,6 +71,7 @@ Error_Model_in_tangent[2] = Error_Model_in_tangent_list[2]
 
 
 def error_model_func(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
+                     offset1: sf.Symbol('offset1'), offset2: sf.Symbol('offset2'), 
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
                      RotGT1: sf.Rot3.symbolic("RotGT1"),
                      RotGT2: sf.Rot3.symbolic("RotGT2"),
@@ -77,10 +81,11 @@ def error_model_func(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'
     model = Error_Model_in_tangent
     return sf.V3(model)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir=out_put_save_directory)
 
 
 def error_model_func_wrt_alpha(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
+                     offset1: sf.Symbol('offset1'), offset2: sf.Symbol('offset2'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
                      RotGT1: sf.Rot3.symbolic("RotGT1"),
                      RotGT2: sf.Rot3.symbolic("RotGT2"),
@@ -90,10 +95,11 @@ def error_model_func_wrt_alpha(theta11: sf.Symbol('theta11'), theta12: sf.Symbol
     model_wrt_alpha = Error_Model_in_tangent.diff(alpha)
     return sf.V3(model_wrt_alpha)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_alpha, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir=out_put_save_directory)
 
 
 def error_model_func_wrt_beta(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
+                     offset1: sf.Symbol('offset1'), offset2: sf.Symbol('offset2'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
                      RotGT1: sf.Rot3.symbolic("RotGT1"),
                      RotGT2: sf.Rot3.symbolic("RotGT2"),
@@ -103,10 +109,39 @@ def error_model_func_wrt_beta(theta11: sf.Symbol('theta11'), theta12: sf.Symbol(
     model_wrt_beta = Error_Model_in_tangent.diff(beta)
     return sf.V3(model_wrt_beta)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_beta, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir=out_put_save_directory)
+
+
+def error_model_func_wrt_offset1(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
+                     offset1: sf.Symbol('offset1'), offset2: sf.Symbol('offset2'),
+                     alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
+                     RotGT1: sf.Rot3.symbolic("RotGT1"),
+                     RotGT2: sf.Rot3.symbolic("RotGT2"),
+                     RotHandEye: sf.Rot3.symbolic("RotHandEye"),
+                     epsilon: sf.Scalar = 0
+                    ) -> sf.Vector3:
+    model_wrt_offser1 = Error_Model_in_tangent.diff(offset1)
+    return sf.V3(model_wrt_offser1)
+resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_offset1, config=codegen.CppConfig(),)
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir=out_put_save_directory)
+
+
+def error_model_func_wrt_offset2(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
+                     offset1: sf.Symbol('offset1'), offset2: sf.Symbol('offset2'),
+                     alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
+                     RotGT1: sf.Rot3.symbolic("RotGT1"),
+                     RotGT2: sf.Rot3.symbolic("RotGT2"),
+                     RotHandEye: sf.Rot3.symbolic("RotHandEye"),
+                     epsilon: sf.Scalar = 0
+                    ) -> sf.Vector3:
+    model_wrt_offser2 = Error_Model_in_tangent.diff(offset2)
+    return sf.V3(model_wrt_offser2)
+resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_offset2, config=codegen.CppConfig(),)
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir=out_put_save_directory)
 
 
 def error_model_func_wrt_hand_eye(theta11: sf.Symbol('theta11'), theta12: sf.Symbol('theta12'), theta21: sf.Symbol('theta21'), theta22: sf.Symbol('theta22'),
+                     offset1: sf.Symbol('offset1'), offset2: sf.Symbol('offset2'),
                      alpha: sf.Symbol('alpha'), beta: sf.Symbol('beta'), 
                      RotGT1: sf.Rot3.symbolic("RotGT1"),
                      RotGT2: sf.Rot3.symbolic("RotGT2"),
@@ -116,4 +151,4 @@ def error_model_func_wrt_hand_eye(theta11: sf.Symbol('theta11'), theta12: sf.Sym
     model_wrt_hand_eye = Error_Model_in_tangent.jacobian(RotHandEye)
     return sf.Matrix33(model_wrt_hand_eye)
 resedual_func_codegen = codegen.Codegen.function(func=error_model_func_wrt_hand_eye, config=codegen.CppConfig(),)
-resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir="/home/mohammad/Diamond_Optimization")
+resedual_func_codegen_data = resedual_func_codegen.generate_function(output_dir=out_put_save_directory)

@@ -65,7 +65,6 @@ namespace gtsam
     class Equality : public NoiseModelFactor2<double, double>
     {
         private:
-
             double measurement_;
 
         public:
@@ -87,7 +86,7 @@ namespace gtsam
                 *H2 = (Matrix(1, 1) << 1).finished();
             }
 
-            double error = abs(beta + alpha - measurement_);
+            double error = beta + alpha - measurement_;
             return (Vector(1) << error).finished();
         }
     };
