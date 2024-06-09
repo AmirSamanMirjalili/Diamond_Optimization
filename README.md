@@ -1,6 +1,7 @@
 # Diamond (Aras Eye Surgical Robot) Kinematic Calibration
 
 This repository contains the code for simultaneous kinematic calibration and calibrating the hand-eye transformation of an eye surgicl spherical paralell robot called diamond. The calibration is performed using a graph based appraaoch called factor graph and performed by using GTSAM and the Symforce library for symbolic computation and code generation.
+
 ![image](https://github.com/AmirSamanMirjalili/Diamond_Optimization/assets/57065409/3f31a3ed-2ae5-4ed2-b06c-dd054fbc1e52)
 
 ### Project Structure
