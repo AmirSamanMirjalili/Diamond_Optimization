@@ -50,16 +50,8 @@ The `DiamondFactor.cpp` file uses the data from the `GT_data_and_joint_values_fo
 
 ### Future Work
 
-- Implement a more robust calibration algorithm that can handle noisy data and outliers.
 - Extend the calibration process to include other robot arm parameters, such as joint offsets and link lengths.
 - Develop a user-friendly interface for data acquisition and calibration.
 
-### Acknowledgements
-
-This project was inspired by the work of [insert relevant references here].
-
-### License
-
-This project is licensed under the [insert license name here] license.
-# Paper
+### Paper
 [Link](https://drive.google.com/file/d/1xQ3zcgaOW9Up-gMPBI9qiqMDW6Fq9o3l/view?usp=sharing)
